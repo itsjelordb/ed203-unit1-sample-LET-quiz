@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LET Review · Unit 1 Human Development</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --text: #172033;
+    --muted: #667085;
+    --line: #dfe5ec;
+    --navy: #183153;
+    --navy-2: #294b75;
+    --accent: #355f8d;
+    --correct: #19744a;
+    --correct-bg: #edf8f2;
+    --wrong: #b42318;
+    --wrong-bg: #fff1f0;
+    --note-bg: #f3f6fb;
+    --shadow: 0 12px 32px rgba(30, 48, 74, .08);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  button, input { font: inherit; }
+
+  .app {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--navy);
+    color: #fff;
+    padding: 12px clamp(18px, 3vw, 42px);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    align-items: center;
+  }
+  .brand {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    min-width: 0;
+  }
+  .brand strong {
+    font-size: clamp(16px, 1.4vw, 21px);
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .brand span {
+    font-size: clamp(13px, 1.1vw, 16px);
+    color: #d7e4f2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .score-mini {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #d7e4f2;
+    white-space: nowrap;
+  }
+  .score-mini b { color: #fff; }
+
+  .progress-wrap {
+    height: 5px;
+    background: #dce4ec;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    transition: width .2s ease;
+  }
+
+  .stage {
+    flex: 1;
+    width: min(1480px, 100%);
+    margin: 0 auto;
+    padding: clamp(14px, 2vh, 22px) clamp(14px, 2.4vw, 30px);
+    display: flex;
+    min-height: 0;
+  }
+
+  .content-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+    min-height: 0;
+  }
+  .content-grid.revealed {
+    grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .question-card {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(20px, 2.3vw, 30px);
+    min-height: 0;
+  }
+
+  .q-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: clamp(12px, 1.7vh, 18px);
+  }
+  .section-tag {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .055em;
+  }
+  .counter {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .counter strong { color: var(--text); }
+
+  .question {
+    margin: 0 0 clamp(16px, 2vh, 22px);
+    font-size: clamp(21px, 2.05vw, 31px);
+    line-height: 1.32;
+    letter-spacing: -.015em;
+    font-weight: 750;
+  }
+
+  .choices {
+    display: grid;
+    gap: 10px;
+  }
+  .choice {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    border-radius: 13px;
+    padding: clamp(12px, 1.45vh, 16px) 15px;
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 12px;
+    align-items: center;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color .12s ease, background .12s ease, transform .06s ease;
+  }
+  .choice:hover:not(:disabled) {
+    border-color: #9fb3c8;
+    background: #fbfdff;
+  }
+  .choice:active:not(:disabled) { transform: translateY(1px); }
+  .choice.selected:not(.correct):not(.wrong) {
+    border-color: var(--navy-2);
+    background: #f1f5fa;
+  }
+  .choice:disabled { cursor: default; opacity: 1; }
+  .choice.correct {
+    border-color: #53a37a;
+    background: var(--correct-bg);
+  }
+  .choice.wrong {
+    border-color: #e18c84;
+    background: var(--wrong-bg);
+  }
+  .letter {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid #cfd8e3;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    color: var(--navy);
+    background: var(--surface-2);
+  }
+  .choice.correct .letter {
+    color: var(--correct);
+    border-color: #83b99d;
+    background: #fff;
+  }
+  .choice.wrong .letter {
+    color: var(--wrong);
+    border-color: #e8aaa4;
+    background: #fff;
+  }
+  .choice-text {
+    font-size: clamp(15px, 1.3vw, 18px);
+    line-height: 1.38;
+    font-weight: 560;
+  }
+
+  .question-footer {
+    margin-top: auto;
+    padding-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .selection-hint {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .btn {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    padding: 11px 16px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: opacity .12s ease, transform .06s ease, background .12s ease;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { cursor: not-allowed; opacity: .45; }
+  .btn-primary {
+    background: var(--navy);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: #102a48; }
+  .btn-secondary {
+    background: #fff;
+    color: var(--navy);
+    border-color: var(--line);
+  }
+  .btn-secondary:hover:not(:disabled) { background: #f7f9fb; }
+  .btn-danger {
+    background: #fff;
+    color: var(--wrong);
+    border-color: #efc5c1;
+  }
+
+  .explanation-card {
+    padding: clamp(18px, 2vw, 26px);
+    min-height: 0;
+    display: none;
+    overflow: hidden;
+  }
+  .content-grid.revealed .explanation-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .feedback-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid var(--line);
+  }
+  .feedback-head h2 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+  .result-pill {
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .result-pill.correct {
+    background: var(--correct-bg);
+    color: var(--correct);
+  }
+  .result-pill.wrong {
+    background: var(--wrong-bg);
+    color: var(--wrong);
+  }
+  .explanation-scroll {
+    overflow: auto;
+    padding-right: 5px;
+    margin-top: 15px;
+    scrollbar-width: thin;
+  }
+  .feedback-block { margin-bottom: 16px; }
+  .feedback-label {
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .correct-answer {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--correct);
+    line-height: 1.4;
+  }
+  .feedback-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.58;
+    color: #344054;
+  }
+  .distractors {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 9px;
+  }
+  .distractors li {
+    font-size: 13.5px;
+    line-height: 1.48;
+    color: #475467;
+  }
+  .distractors b { color: var(--text); }
+  .review-note {
+    background: var(--note-bg);
+    border: 1px solid #d9e2ef;
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #2f4663;
+  }
+
+  .bottom-nav {
+    padding: 0 clamp(14px, 2.4vw, 30px) clamp(14px, 1.8vh, 20px);
+    width: min(1480px, 100%);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .bottom-nav .right { display: flex; gap: 10px; }
+
+  .summary {
+    width: 100%;
+    padding: clamp(20px, 2.6vw, 34px);
+    overflow: auto;
+  }
+  .summary-top {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 22px;
+    align-items: start;
+  }
+  .summary h1 {
+    margin: 0 0 8px;
+    font-size: clamp(26px, 3vw, 42px);
+  }
+  .summary-intro {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .score-box {
+    background: var(--navy);
+    color: #fff;
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .score-box .big {
+    font-size: clamp(34px, 4vw, 54px);
+    font-weight: 850;
+    line-height: 1;
+  }
+  .score-box .sub {
+    color: #d7e4f2;
+    margin-top: 7px;
+    font-size: 13px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .stat {
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .stat span {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+  }
+  .stat b {
+    display: block;
+    margin-top: 4px;
+    font-size: 20px;
+  }
+  .mistakes {
+    margin-top: 24px;
+  }
+  .mistakes h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+  }
+  .mistake-list {
+    display: grid;
+    gap: 10px;
+  }
+  .mistake {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 14px;
+    background: #fff;
+  }
+  .mistake-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: start;
+  }
+  .mistake-q {
+    font-weight: 750;
+    line-height: 1.42;
+  }
+  .mistake-answer {
+    margin-top: 7px;
+    color: var(--correct);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .mistake-note {
+    margin-top: 5px;
+    color: #475467;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .jump {
+    white-space: nowrap;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 750;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .summary-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .all-correct {
+    border: 1px solid #b7d9c6;
+    background: var(--correct-bg);
+    color: var(--correct);
+    border-radius: 12px;
+    padding: 14px;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 980px) and (min-height: 650px) {
+    .stage { overflow: hidden; }
+    .question-card, .explanation-card { max-height: calc(100svh - 132px); }
+  }
+
+  @media (max-width: 979px) {
+    .app { min-height: 100vh; }
+    .stage { display: block; }
+    .content-grid,
+    .content-grid.revealed {
+      grid-template-columns: 1fr;
+    }
+    .explanation-card {
+      overflow: visible;
+    }
+    .explanation-scroll { overflow: visible; }
+    .question-card, .explanation-card { max-height: none; }
+    .bottom-nav { position: static; }
+    .summary-top { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .topbar {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .brand { align-items: flex-start; flex-direction: column; gap: 3px; }
+    .score-mini { justify-content: space-between; }
+    .question { font-size: 21px; }
+    .choice { grid-template-columns: 34px 1fr; }
+    .bottom-nav { flex-wrap: wrap; }
+    .bottom-nav .right { margin-left: auto; }
+    .stats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <strong>LET REVIEW</strong>
+      <span>Unit 1 · General Principles of Human Development</span>
+    </div>
+    <div class="score-mini" aria-label="Current quiz statistics">
+      <span>Answered <b id="answeredMini">0</b>/60</span>
+      <span>Correct <b id="correctMini">0</b></span>
+      <span>Score <b id="percentMini">0%</b></span>
+    </div>
+  </header>
+  <div class="progress-wrap" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+
+  <main class="stage" id="stage">
+    <div class="content-grid" id="contentGrid">
+      <section class="card question-card" id="questionCard" aria-live="polite">
+        <div class="q-meta">
+          <div class="section-tag" id="sectionTag"></div>
+          <div class="counter">Question <strong id="questionNum"></strong> of <strong id="totalNum">60</strong></div>
+        </div>
+        <h1 class="question" id="questionText"></h1>
+        <div class="choices" id="choices" role="radiogroup" aria-label="Answer choices"></div>
+        <div class="question-footer">
+          <div class="selection-hint" id="selectionHint">Select one answer, then submit.</div>
+          <button class="btn btn-primary" id="submitBtn" disabled>Submit Answer</button>
+        </div>
+      </section>
+
+      <aside class="card explanation-card" id="explanationCard" aria-label="Answer and explanation">
+        <div class="feedback-head">
+          <h2>Answer &amp; Explanation</h2>
+          <div class="result-pill" id="resultPill"></div>
+        </div>
+        <div class="explanation-scroll">
+          <div class="feedback-block">
+            <div class="feedback-label">Correct Answer</div>
+            <div class="correct-answer" id="correctAnswer"></div>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">Explanation</div>
+            <p class="feedback-text" id="explanationText"></p>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">Why the Other Choices Are Incorrect</div>
+            <ul class="distractors" id="distractors"></ul>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">LET Review Note</div>
+            <div class="review-note" id="reviewNote"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" id="bottomNav" aria-label="Quiz navigation">
+    <button class="btn btn-secondary" id="prevBtn">Previous Question</button>
+    <div class="right">
+      <button class="btn btn-primary" id="nextBtn" style="display:none">Next Question</button>
+    </div>
+  </nav>
+</div>
+
+<script>
+const QUESTIONS = [{"id": 1, "section": "Part I · Basic Concepts & Principles", "question": "Which statement best defines development?", "choices": [{"letter": "A", "text": "An increase in body size and weight"}, {"letter": "B", "text": "A progressive series of orderly changes toward maturity"}, {"letter": "C", "text": "The acquisition of physical strength only"}, {"letter": "D", "text": "A temporary change in behavior"}], "answer": "B", "explanation": "Development involves orderly and progressive changes toward maturity.", "whyOthers": {"A": "This describes growth, a quantitative physical increase, rather than the broader process of development.", "C": "This reduces development to physical strength, but development includes physical, cognitive, and socio-emotional change.", "D": "A temporary change is not development; development refers to progressive, relatively enduring change over time."}, "note": "LET clue: growth usually points to measurable physical increase; development is the broader, orderly process of change toward maturity."}, {"id": 2, "section": "Part I · Basic Concepts & Principles", "question": "Which characteristic distinguishes growth from development?", "choices": [{"letter": "A", "text": "Growth is qualitative, while development is quantitative."}, {"letter": "B", "text": "Growth is measurable and quantitative, while development involves qualitative change."}, {"letter": "C", "text": "Growth occurs only after birth, while development begins in adolescence."}, {"letter": "D", "text": "Growth is influenced by learning, while development is not."}], "answer": "B", "explanation": "Growth is quantitative and measurable, while development includes qualitative changes in functioning and organization.", "whyOthers": {"A": "This reverses the distinction: growth is primarily quantitative, while development includes qualitative change.", "C": "Both growth and development begin before birth; development does not begin only in adolescence.", "D": "Both growth and development are influenced by biological and environmental factors; this contrast is false."}, "note": "Distinguish growth = quantitative/measurable from development = broader qualitative + quantitative change."}, {"id": 3, "section": "Part I · Basic Concepts & Principles", "question": "A child’s increase in height, weight, and bone mass is primarily an example of:", "choices": [{"letter": "A", "text": "Cognitive development"}, {"letter": "B", "text": "Socio-emotional development"}, {"letter": "C", "text": "Growth"}, {"letter": "D", "text": "Learning"}], "answer": "C", "explanation": "Height, weight, and bone mass are measurable physical increases, so they are examples of growth.", "whyOthers": {"A": "Cognitive development concerns mental processes such as memory and reasoning, not measurable increases in body size.", "B": "Socio-emotional development concerns emotions, personality, and relationships, not height or bone mass.", "D": "Learning is change through experience; height and bone mass are primarily biological growth indicators."}, "note": "Height, weight, and bone mass are classic quantitative indicators of growth."}, {"id": 4, "section": "Part I · Basic Concepts & Principles", "question": "Maturation refers to:", "choices": [{"letter": "A", "text": "The acquisition of knowledge through formal instruction"}, {"letter": "B", "text": "The biological unfolding of genetically influenced changes"}, {"letter": "C", "text": "The influence of culture on behavior"}, {"letter": "D", "text": "The conscious effort to acquire a new skill"}], "answer": "B", "explanation": "Maturation is the biologically programmed unfolding of genetically influenced changes.", "whyOthers": {"A": "Formal instruction is a route to learning, not the definition of maturation.", "C": "Culture can shape development, but maturation specifically refers to biologically based unfolding.", "D": "Conscious skill acquisition through practice is learning rather than maturation."}, "note": "Maturation = biological readiness/unfolding; learning = change through experience or practice."}, {"id": 5, "section": "Part I · Basic Concepts & Principles", "question": "Which situation best illustrates learning?", "choices": [{"letter": "A", "text": "A baby’s natural readiness to walk"}, {"letter": "B", "text": "A child’s increase in height"}, {"letter": "C", "text": "A learner’s ability to swim after repeated practice"}, {"letter": "D", "text": "The development of the brain during pregnancy"}], "answer": "C", "explanation": "Swimming acquired through repeated practice is a learned skill because the change results from experience.", "whyOthers": {"A": "Natural readiness to walk is more closely related to maturation, even though practice and environment also matter.", "B": "Increase in height is growth.", "D": "Prenatal brain development is largely biological maturation, not an acquired skill through practice."}, "note": "Practice or experience points to learning; genetically timed readiness points to maturation."}, {"id": 6, "section": "Part I · Basic Concepts & Principles", "question": "Learning is best described as:", "choices": [{"letter": "A", "text": "A relatively permanent change resulting from experience"}, {"letter": "B", "text": "A temporary response to a classroom activity"}, {"letter": "C", "text": "A biological process that occurs without experience"}, {"letter": "D", "text": "A change that is limited to physical behavior"}], "answer": "A", "explanation": "Learning produces a relatively permanent change in knowledge, skill, attitude, or behavior through experience.", "whyOthers": {"B": "A temporary response lacks the relative permanence expected in learning.", "C": "This describes maturation or biological development rather than learning through experience.", "D": "Learning may be cognitive, affective, behavioral, or skill-based; it is not limited to physical behavior."}, "note": "Key phrase: relatively permanent change due to experience. Temporary states such as fatigue are not learning."}, {"id": 7, "section": "Part I · Basic Concepts & Principles", "question": "Which statement about learning is correct?", "choices": [{"letter": "A", "text": "Learning is purely cognitive."}, {"letter": "B", "text": "Learning is passive and occurs without learner participation."}, {"letter": "C", "text": "Learning involves cognitive, affective, and behavioral domains."}, {"letter": "D", "text": "Learning occurs only inside the classroom."}], "answer": "C", "explanation": "Learning is multifaceted: it may involve cognitive, affective, and behavioral changes and requires active engagement.", "whyOthers": {"A": "Learning can involve cognition, but it also includes affective and behavioral dimensions.", "B": "Learner-centered views treat learning as active rather than purely passive.", "D": "Learning occurs in formal, nonformal, and everyday settings, not only in classrooms."}, "note": "Learning is not only knowing; it may affect thinking, feelings/values, and behavior."}, {"id": 8, "section": "Part I · Basic Concepts & Principles", "question": "Which domain includes perception, language, memory, and problem-solving?", "choices": [{"letter": "A", "text": "Physical development"}, {"letter": "B", "text": "Cognitive development"}, {"letter": "C", "text": "Socio-emotional development"}, {"letter": "D", "text": "Moral development only"}], "answer": "B", "explanation": "Cognitive development includes mental processes such as perception, language, memory, reasoning, and problem-solving.", "whyOthers": {"A": "Physical development involves bodily growth and motor change, not language, memory, and problem-solving.", "C": "Socio-emotional development centers on emotions, personality, and relationships.", "D": "Moral development can involve cognition, but the listed processes are broader features of cognitive development."}, "note": "Cognitive = thinking and mental processes; socio-emotional = emotions, personality, relationships; physical = body and motor change."}, {"id": 9, "section": "Part I · Basic Concepts & Principles", "question": "Which domain includes motives, emotions, personality, relationships, and social roles?", "choices": [{"letter": "A", "text": "Physical development"}, {"letter": "B", "text": "Cognitive development"}, {"letter": "C", "text": "Psychological or socio-emotional development"}, {"letter": "D", "text": "Biological maturation"}], "answer": "C", "explanation": "Psychological or socio-emotional development includes motives, emotions, personality, relationships, and social roles.", "whyOthers": {"A": "Physical development concerns bodily and motor changes.", "B": "Cognitive development concerns thinking and mental processes.", "D": "Biological maturation refers to genetically influenced unfolding, not the full set of motives, emotions, and relationships."}, "note": "Socio-emotional/psychological development centers on emotion, personality, motives, relationships, and roles."}, {"id": 10, "section": "Part I · Basic Concepts & Principles", "question": "Which statement about the domains of development is most accurate?", "choices": [{"letter": "A", "text": "The domains develop independently of one another."}, {"letter": "B", "text": "Only physical development is observable."}, {"letter": "C", "text": "The domains are integrated and interwoven."}, {"letter": "D", "text": "Cognitive development always occurs before physical development."}], "answer": "C", "explanation": "Physical, cognitive, and socio-emotional domains influence one another; development is integrated rather than compartmentalized.", "whyOthers": {"A": "The domains interact; they do not develop in isolation.", "B": "Cognitive and socio-emotional changes are also observable through behavior and performance, not only physical change.", "D": "There is no universal rule that cognitive development must precede physical development."}, "note": "LET often tests interaction among domains: a change in one domain can affect the others."}, {"id": 11, "section": "Part I · Basic Concepts & Principles", "question": "A developmental psychologist who believes that development occurs gradually and continuously supports the:", "choices": [{"letter": "A", "text": "Discontinuous view"}, {"letter": "B", "text": "Continuous view"}, {"letter": "C", "text": "Genetic view only"}, {"letter": "D", "text": "Environmental deficit view"}], "answer": "B", "explanation": "The continuous view describes development as gradual, cumulative change rather than movement through sharply separated stages.", "whyOthers": {"A": "The discontinuous view emphasizes distinct stages rather than gradual change.", "C": "A 'genetic view only' is not the standard label for the gradual-versus-stage issue.", "D": "Environmental deficit view is unrelated to whether development is continuous."}, "note": "Continuous = gradual/cumulative; discontinuous = stage-like/qualitative shifts."}, {"id": 12, "section": "Part I · Basic Concepts & Principles", "question": "The view that development occurs through distinct stages is called the:", "choices": [{"letter": "A", "text": "Continuous view"}, {"letter": "B", "text": "Discontinuous view"}, {"letter": "C", "text": "Quantitative view"}, {"letter": "D", "text": "Environmental view"}], "answer": "B", "explanation": "The discontinuous view proposes qualitatively distinct stages of development.", "whyOthers": {"A": "The continuous view describes gradual cumulative change.", "C": "'Quantitative view' is not the standard term for stage-like development.", "D": "Environmental influence is a separate issue from continuity versus discontinuity."}, "note": "Discontinuous = distinct stages; continuous = steady, cumulative change."}, {"id": 13, "section": "Part I · Basic Concepts & Principles", "question": "Which example illustrates the influence of nature?", "choices": [{"letter": "A", "text": "A child learning table manners from parents"}, {"letter": "B", "text": "A learner improving through practice"}, {"letter": "C", "text": "Genetically influenced physical maturation"}, {"letter": "D", "text": "A student adapting to classroom rules"}], "answer": "C", "explanation": "Genetically influenced physical maturation is an example of nature because it reflects hereditary and biological influences.", "whyOthers": {"A": "Learning table manners is primarily environmental socialization, a nurture influence.", "B": "Improvement through practice is a nurture/experience influence.", "D": "Adapting to classroom rules reflects environmental experience and social learning."}, "note": "Nature points to heredity and biological maturation; nurture points to environment and experience."}, {"id": 14, "section": "Part I · Basic Concepts & Principles", "question": "Which example best illustrates nurture?", "choices": [{"letter": "A", "text": "Genetic inheritance"}, {"letter": "B", "text": "Biological maturation"}, {"letter": "C", "text": "Environmental experiences and social interaction"}, {"letter": "D", "text": "The unfolding of genetically programmed abilities"}], "answer": "C", "explanation": "Nurture refers to environmental experiences, social interaction, culture, education, and other contextual influences.", "whyOthers": {"A": "Genetic inheritance is nature.", "B": "Biological maturation is primarily a nature influence.", "D": "Genetically programmed abilities are nature, not nurture."}, "note": "Nurture includes family, school, culture, peers, practice, and other environmental experiences."}, {"id": 15, "section": "Part I · Basic Concepts & Principles", "question": "The interaction between heredity and environment is commonly described as:", "choices": [{"letter": "A", "text": "Growth and atrophy"}, {"letter": "B", "text": "Nature and nurture"}, {"letter": "C", "text": "Equilibrium and disequilibrium"}, {"letter": "D", "text": "Continuity and sequence"}], "answer": "B", "explanation": "Human development is best understood through the interaction of hereditary or biological influences and environmental experience—nature and nurture.", "whyOthers": {"A": "Growth and atrophy describe increase and decline, not the heredity-environment issue.", "C": "Equilibrium and disequilibrium refer to adaptation/adjustment states, not heredity and environment.", "D": "Continuity and sequence concern patterns of developmental change, not the nature-nurture interaction."}, "note": "Avoid the false either/or: modern developmental views emphasize nature–nurture interaction."}, {"id": 16, "section": "Part I · Basic Concepts & Principles", "question": "Development that proceeds from the head downward is called:", "choices": [{"letter": "A", "text": "Proximodistal development"}, {"letter": "B", "text": "Cephalocaudal development"}, {"letter": "C", "text": "Discontinuous development"}, {"letter": "D", "text": "Environmental development"}], "answer": "B", "explanation": "Cephalocaudal development proceeds from the head downward toward the lower parts of the body.", "whyOthers": {"A": "Proximodistal means center-to-extremities, not head-to-foot.", "C": "Discontinuous development refers to stage-like change.", "D": "'Environmental development' is not the term for the directional pattern from head downward."}, "note": "Cephalocaudal: head → toe. Think 'cephalo' = head."}, {"id": 17, "section": "Part I · Basic Concepts & Principles", "question": "Development that proceeds from the center of the body toward the extremities is called:", "choices": [{"letter": "A", "text": "Cephalocaudal development"}, {"letter": "B", "text": "Proximodistal development"}, {"letter": "C", "text": "Socio-emotional development"}, {"letter": "D", "text": "Sequential maturation"}], "answer": "B", "explanation": "Proximodistal development proceeds from the center of the body outward toward the extremities.", "whyOthers": {"A": "Cephalocaudal means head-to-foot, not center-to-extremities.", "C": "Socio-emotional development is a domain, not a directional motor-growth pattern.", "D": "Sequential maturation is too general; the specific center-outward pattern is proximodistal."}, "note": "Proximodistal: near/center → far/extremities."}, {"id": 18, "section": "Part I · Basic Concepts & Principles", "question": "A child can control the trunk before accurately controlling the fingers. This illustrates:", "choices": [{"letter": "A", "text": "Cephalocaudal development"}, {"letter": "B", "text": "Proximodistal development"}, {"letter": "C", "text": "Cognitive development"}, {"letter": "D", "text": "Cultural development"}], "answer": "B", "explanation": "Earlier control of the trunk than the fingers illustrates proximodistal development: control develops from the body's center outward.", "whyOthers": {"A": "Cephalocaudal would be shown by head/upper-body control preceding lower-body control, not trunk before fingers.", "C": "Cognitive development does not describe the directional pattern of motor control here.", "D": "Culture can influence development, but the center-to-extremities sequence is a proximodistal pattern."}, "note": "Trunk before fingers = proximodistal; head control before leg control = cephalocaudal."}, {"id": 19, "section": "Part I · Basic Concepts & Principles", "question": "Which statement reflects the principle that all individuals are different?", "choices": [{"letter": "A", "text": "All learners of the same age should perform identically."}, {"letter": "B", "text": "Individual differences are abnormal and should be eliminated."}, {"letter": "C", "text": "Learners may develop at different rates and in different ways."}, {"letter": "D", "text": "Genetic factors completely determine behavior."}], "answer": "C", "explanation": "Individual differences mean that people may follow broadly predictable patterns while developing at different rates and in different ways.", "whyOthers": {"A": "Same-age learners can vary substantially in rate and profile of development.", "B": "Individual differences are normal, not abnormalities to eliminate.", "D": "Genes influence development but do not completely determine behavior; environment and experience also matter."}, "note": "Norms describe patterns, not identical timelines. Individual variation is expected."}, {"id": 20, "section": "Part I · Basic Concepts & Principles", "question": "A teacher gives different learners varied opportunities to demonstrate understanding because they have different abilities and experiences. Which principle is illustrated?", "choices": [{"letter": "A", "text": "Development follows no pattern."}, {"letter": "B", "text": "All individuals are different."}, {"letter": "C", "text": "Development occurs only through maturation."}, {"letter": "D", "text": "Learning is independent of experience."}], "answer": "B", "explanation": "Varied ways to demonstrate learning recognize differences in learners' abilities, experiences, and developmental profiles.", "whyOthers": {"A": "Development does follow broad patterns even while individuals vary.", "C": "Maturation is only one influence; development also involves experience and context.", "D": "Learning is strongly influenced by experience, so it is not independent of it."}, "note": "Differentiation is a classroom implication of individual differences."}, {"id": 21, "section": "Part I · Basic Concepts & Principles", "question": "A period when a person adapts easily to environmental demands is called:", "choices": [{"letter": "A", "text": "Disequilibrium"}, {"letter": "B", "text": "Equilibrium"}, {"letter": "C", "text": "Regression"}, {"letter": "D", "text": "Transition"}], "answer": "B", "explanation": "Equilibrium is a period of relatively smooth adjustment in which the person adapts well to environmental demands.", "whyOthers": {"A": "Disequilibrium is difficulty adjusting, the opposite of the situation described.", "C": "Regression refers to reverting to earlier patterns and is not the general term for easy adjustment.", "D": "A transition is a period of change, but it does not necessarily imply successful adaptation."}, "note": "Equilibrium = smoother adaptation; disequilibrium = difficulty adjusting."}, {"id": 22, "section": "Part I · Basic Concepts & Principles", "question": "A period characterized by difficulty in adapting and poor adjustment is called:", "choices": [{"letter": "A", "text": "Equilibrium"}, {"letter": "B", "text": "Disequilibrium"}, {"letter": "C", "text": "Maturation"}, {"letter": "D", "text": "Plasticity"}], "answer": "B", "explanation": "Disequilibrium is a period of less successful adjustment, often marked by difficulty adapting to current demands.", "whyOthers": {"A": "Equilibrium means relatively smooth adjustment, the opposite of the situation described.", "C": "Maturation is biological unfolding, not poor adaptation.", "D": "Plasticity is capacity for change, not an adjustment difficulty."}, "note": "Disequilibrium signals imbalance or poor adjustment to current demands."}, {"id": 23, "section": "Part I · Basic Concepts & Principles", "question": "Which principle explains why young children may be more vulnerable to accidents and illnesses?", "choices": [{"letter": "A", "text": "Each phase of development has hazards."}, {"letter": "B", "text": "Development is always continuous."}, {"letter": "C", "text": "Learning is multifaceted."}, {"letter": "D", "text": "Development is independent of the environment."}], "answer": "A", "explanation": "Developmental periods can carry characteristic hazards or vulnerabilities; young children, for example, may face particular accident and illness risks.", "whyOthers": {"B": "Development can include both continuous and stage-like aspects; this does not explain age-specific accident or illness risks.", "C": "Learning being multifaceted is unrelated to developmental hazards.", "D": "Environment does influence development; this statement is false and does not explain vulnerability."}, "note": "Each developmental phase may have characteristic risks; hazards do not mean development is abnormal."}, {"id": 24, "section": "Part I · Basic Concepts & Principles", "question": "Which classroom practice best demonstrates that development is aided by stimulation?", "choices": [{"letter": "A", "text": "Providing an enriched environment with meaningful activities"}, {"letter": "B", "text": "Giving identical tasks regardless of learner ability"}, {"letter": "C", "text": "Avoiding interaction with learners"}, {"letter": "D", "text": "Assuming that maturation alone determines achievement"}], "answer": "A", "explanation": "An enriched environment supplies stimulation and meaningful experiences that can support the development of emerging capacities.", "whyOthers": {"B": "Identical tasks ignore differences in readiness, ability, and experience and may reduce effective stimulation.", "C": "Avoiding interaction removes an important source of environmental stimulation.", "D": "Maturation matters, but assuming it alone determines achievement ignores experience and instruction."}, "note": "Stimulation can support development, but it works together with maturation and individual readiness."}, {"id": 25, "section": "Part I · Basic Concepts & Principles", "question": "Which factor explains why development may differ across cultural groups?", "choices": [{"letter": "A", "text": "Cultural beliefs, practices, values, and social expectations"}, {"letter": "B", "text": "Identical genetic composition among all learners"}, {"letter": "C", "text": "The absence of environmental influence"}, {"letter": "D", "text": "The impossibility of individual differences"}], "answer": "A", "explanation": "Culture shapes expectations, values, practices, opportunities, and interpretations of development, contributing to variation across groups.", "whyOthers": {"B": "Humans do not have identical genetic composition, and this would not explain cultural variation.", "C": "Environmental influence clearly exists; culture is itself part of the environment.", "D": "Individual differences are possible and expected, so this statement is false."}, "note": "Culture affects developmental expectations and opportunities; do not assume one universal social timetable."}, {"id": 26, "section": "Part I · Basic Concepts & Principles", "question": "Developmental tasks are best described as:", "choices": [{"letter": "A", "text": "Random activities selected by the learner"}, {"letter": "B", "text": "Social expectations or guidelines for particular ages"}, {"letter": "C", "text": "Biological changes that occur only before birth"}, {"letter": "D", "text": "Classroom activities designed exclusively by teachers"}], "answer": "B", "explanation": "Developmental tasks are age-linked expectations or guidelines associated with what individuals are generally expected to accomplish during a period of life.", "whyOthers": {"A": "Developmental tasks are socially and developmentally patterned, not random personal activities.", "C": "They are not limited to prenatal biological changes.", "D": "Teachers may design classroom tasks, but developmental tasks are broader age-linked social expectations."}, "note": "Developmental tasks are age-linked expectations, not random teacher-made activities."}, {"id": 27, "section": "Part I · Basic Concepts & Principles", "question": "Traditional beliefs about people of different ages may influence:", "choices": [{"letter": "A", "text": "Only physical growth"}, {"letter": "B", "text": "People’s judgments and self-evaluations"}, {"letter": "C", "text": "The genetic structure of an individual"}, {"letter": "D", "text": "The sequence of prenatal development"}], "answer": "B", "explanation": "Age-related beliefs and stereotypes can shape how people judge others and themselves.", "whyOthers": {"A": "Age beliefs affect social judgment and self-evaluation, not only physical growth.", "C": "Beliefs do not alter a person's genetic structure.", "D": "Age stereotypes do not determine the biological sequence of prenatal development."}, "note": "Age stereotypes can shape self-concept and judgments even when they are inaccurate."}, {"id": 28, "section": "Part I · Basic Concepts & Principles", "question": "Which statement is consistent with the lifespan perspective?", "choices": [{"letter": "A", "text": "Development ends at adulthood."}, {"letter": "B", "text": "Development occurs only during childhood."}, {"letter": "C", "text": "Development is lifelong and involves gains, losses, and continuities."}, {"letter": "D", "text": "Development is determined entirely during the prenatal period."}], "answer": "C", "explanation": "The lifespan perspective holds that development continues from conception through old age and includes gains, losses, and continuities.", "whyOthers": {"A": "The lifespan perspective explicitly rejects the idea that development stops at adulthood.", "B": "It also rejects the idea that development is confined to childhood.", "D": "Prenatal experience matters, but development is not entirely fixed before birth."}, "note": "Lifespan = lifelong, multidimensional, multidirectional, plastic, and contextual."}, {"id": 29, "section": "Part I · Basic Concepts & Principles", "question": "Plasticity refers to:", "choices": [{"letter": "A", "text": "The inability to change after childhood"}, {"letter": "B", "text": "The potential for change and continued learning"}, {"letter": "C", "text": "The physical growth of bones only"}, {"letter": "D", "text": "The tendency of development to stop during old age"}], "answer": "B", "explanation": "Plasticity is the capacity or potential for change, adaptation, and continued learning across development.", "whyOthers": {"A": "Plasticity means capacity for change, so 'inability to change' is its opposite.", "C": "Bone growth is one physical process, not the meaning of plasticity.", "D": "Old age does not imply that all development or learning stops."}, "note": "Plasticity means capacity for change, not unlimited change."}, {"id": 30, "section": "Part I · Basic Concepts & Principles", "question": "Which three goals are identified as major aspects of development?", "choices": [{"letter": "A", "text": "Growth, maintenance, and regulation"}, {"letter": "B", "text": "Learning, testing, and grading"}, {"letter": "C", "text": "Heredity, culture, and language"}, {"letter": "D", "text": "Maturation, imitation, and punishment"}], "answer": "A", "explanation": "The lifespan perspective often describes development as involving growth, maintenance, and regulation of loss.", "whyOthers": {"B": "These are educational processes, not the three lifespan-development goals identified here.", "C": "Heredity, culture, and language are influences or contexts, not the three goals.", "D": "Maturation, imitation, and punishment are mechanisms or experiences, not the lifespan trio."}, "note": "Remember the trio: growth, maintenance, regulation of loss."}, {"id": 31, "section": "Part II · Stages & Issues", "question": "Which developmental stage extends from conception to birth?", "choices": [{"letter": "A", "text": "Infancy"}, {"letter": "B", "text": "Prenatal period"}, {"letter": "C", "text": "Early childhood"}, {"letter": "D", "text": "Adolescence"}], "answer": "B", "explanation": "The prenatal period begins at conception and continues until birth.", "whyOthers": {"A": "Infancy begins after birth, so it does not cover conception to birth.", "C": "Early childhood occurs after infancy/toddlerhood.", "D": "Adolescence occurs much later and begins around puberty."}, "note": "Prenatal = conception to birth."}, {"id": 32, "section": "Part II · Stages & Issues", "question": "Infancy generally refers to:", "choices": [{"letter": "A", "text": "The first year of life"}, {"letter": "B", "text": "The second decade of life"}, {"letter": "C", "text": "The period from six to ten years old"}, {"letter": "D", "text": "The period from eighteen to thirty-five years old"}], "answer": "A", "explanation": "In the source material, infancy generally refers to the first year of life; age boundaries can vary somewhat across authors.", "whyOthers": {"B": "The second decade broadly corresponds to adolescence, not infancy.", "C": "Ages six to ten are typically school-age/late childhood.", "D": "Ages eighteen to thirty-five fall within early adulthood in many frameworks."}, "note": "Use the source's stage labels, but remember that exact age boundaries can vary by author."}, {"id": 33, "section": "Part II · Stages & Issues", "question": "Toddlerhood is primarily associated with:", "choices": [{"letter": "A", "text": "The development of abstract thinking"}, {"letter": "B", "text": "The child’s first independent steps and increasing autonomy"}, {"letter": "C", "text": "Career establishment"}, {"letter": "D", "text": "Declining physical strength"}], "answer": "B", "explanation": "Toddlerhood is associated with increasing mobility, first independent steps, autonomy, and rapid growth in self-directed action.", "whyOthers": {"A": "Abstract thinking is more characteristic of adolescence than toddlerhood.", "C": "Career establishment is an early-adulthood task.", "D": "Declining physical strength is associated more with later adulthood than toddlerhood."}, "note": "Toddlerhood is strongly associated with mobility and autonomy."}, {"id": 34, "section": "Part II · Stages & Issues", "question": "Make-believe play, expanding language, emerging morality, and increasing self-control are characteristic of:", "choices": [{"letter": "A", "text": "Prenatal development"}, {"letter": "B", "text": "Early childhood"}, {"letter": "C", "text": "Middle adulthood"}, {"letter": "D", "text": "Late adulthood"}], "answer": "B", "explanation": "Make-believe play, rapid language growth, emerging morality, and increasing self-control are characteristic of early childhood.", "whyOthers": {"A": "Prenatal development occurs before birth and does not include childhood make-believe play.", "C": "Middle adulthood involves adult work, family, and generativity concerns, not early pretend play.", "D": "Late adulthood is not the period characterized by emerging language and make-believe play."}, "note": "Early childhood clues: pretend play, language expansion, self-control, emerging morality."}, {"id": 35, "section": "Part II · Stages & Issues", "question": "Mastery of reading, writing, mathematics, organized games, and more logical thinking is characteristic of:", "choices": [{"letter": "A", "text": "Late childhood"}, {"letter": "B", "text": "Infancy"}, {"letter": "C", "text": "Early adulthood"}, {"letter": "D", "text": "Prenatal development"}], "answer": "A", "explanation": "Late childhood or the school-age years are associated with academic skill mastery, organized games, peer involvement, and more logical thinking.", "whyOthers": {"B": "Infancy precedes mastery of school academic skills.", "C": "Early adulthood focuses on adult roles and career/intimacy tasks.", "D": "Prenatal development occurs before formal academic skill acquisition."}, "note": "Late childhood/school age clues: literacy, numeracy, organized play, concrete logical thinking."}, {"id": 36, "section": "Part II · Stages & Issues", "question": "Puberty and adolescence are associated with:", "choices": [{"letter": "A", "text": "Sexual maturity, abstract thinking, and increasing autonomy"}, {"letter": "B", "text": "The beginning of motor development"}, {"letter": "C", "text": "The complete absence of family influence"}, {"letter": "D", "text": "The end of learning"}], "answer": "A", "explanation": "Adolescence includes puberty and sexual maturation, increasing capacity for abstract thought, identity development, and greater autonomy.", "whyOthers": {"B": "Motor development begins long before adolescence.", "C": "Family influence often remains important during adolescence; it does not disappear completely.", "D": "Learning continues through adolescence and across the lifespan."}, "note": "Adolescence clues: puberty, identity, autonomy, abstract thinking."}, {"id": 37, "section": "Part II · Stages & Issues", "question": "Establishing a career, forming a family, and expanding social relationships are common developmental tasks of:", "choices": [{"letter": "A", "text": "Early adulthood"}, {"letter": "B", "text": "Infancy"}, {"letter": "C", "text": "Early childhood"}, {"letter": "D", "text": "Late adulthood"}], "answer": "A", "explanation": "Early adulthood commonly includes establishing work or career roles, forming intimate relationships or a family, and expanding adult social roles.", "whyOthers": {"B": "Infancy is characterized by rapid early growth and attachment, not career/family establishment.", "C": "Early childhood centers on play, language, and self-control, not adult career roles.", "D": "Late adulthood focuses more on adaptation to aging, retirement, and later-life roles."}, "note": "Early adulthood clues: career, intimacy/family, adult social roles."}, {"id": 38, "section": "Part II · Stages & Issues", "question": "Which statement about late adulthood is most accurate?", "choices": [{"letter": "A", "text": "Learning completely ends."}, {"letter": "B", "text": "Late adulthood consists only of deterioration and dependency."}, {"letter": "C", "text": "Late adulthood includes both gains and declines."}, {"letter": "D", "text": "Physical and cognitive challenges cannot be managed."}], "answer": "C", "explanation": "Late adulthood is not simply decline; it can include continued learning, adaptation, expertise, and social-emotional gains alongside physical or cognitive losses.", "whyOthers": {"A": "Learning can continue in late adulthood.", "B": "Late adulthood is not only deterioration or dependency; many capacities and social-emotional strengths can remain or grow.", "D": "Challenges can often be managed through adaptation, support, practice, and environmental modification."}, "note": "Late adulthood includes both gains and losses; avoid 'all decline' distractors."}, {"id": 39, "section": "Part II · Stages & Issues", "question": "Which issue asks whether heredity or environment has a stronger influence on development?", "choices": [{"letter": "A", "text": "Continuity versus discontinuity"}, {"letter": "B", "text": "Nature versus nurture"}, {"letter": "C", "text": "Early experience versus later experience"}, {"letter": "D", "text": "Abnormal behavior versus individual differences"}], "answer": "B", "explanation": "Nature versus nurture asks how heredity and biological factors interact with environmental experience in shaping development.", "whyOthers": {"A": "Continuity-discontinuity asks gradual versus stage-like change, not heredity versus environment.", "C": "Early-versus-later experience asks when experience matters most.", "D": "This is not a standard label for the heredity-environment debate."}, "note": "Nature–nurture = heredity/biology versus environment/experience."}, {"id": 40, "section": "Part II · Stages & Issues", "question": "Which issue asks whether development occurs gradually or through distinct stages?", "choices": [{"letter": "A", "text": "Nature versus nurture"}, {"letter": "B", "text": "Continuity versus discontinuity"}, {"letter": "C", "text": "Stability versus change"}, {"letter": "D", "text": "Maturation versus learning"}], "answer": "B", "explanation": "Continuity versus discontinuity asks whether developmental change is gradual and cumulative or occurs through qualitatively distinct stages.", "whyOthers": {"A": "Nature-nurture concerns heredity and environment, not gradual versus stage-like change.", "C": "Stability-change asks whether characteristics persist or change over time; it is a different issue.", "D": "Maturation-learning distinguishes biological unfolding from experience-based change, not continuous versus stage-like development."}, "note": "Continuity–discontinuity = gradual change versus distinct stages."}, {"id": 41, "section": "Part II · Stages & Issues", "question": "Which issue concerns whether early childhood or later experiences have a greater effect on development?", "choices": [{"letter": "A", "text": "Early experience versus later experience"}, {"letter": "B", "text": "Individual differences versus norms"}, {"letter": "C", "text": "Growth versus atrophy"}, {"letter": "D", "text": "Physical versus cognitive development"}], "answer": "A", "explanation": "Early versus later experience concerns the relative influence of experiences at different points in the lifespan.", "whyOthers": {"B": "Norms versus individual differences concerns variation around typical patterns.", "C": "Growth versus atrophy is not the standard developmental issue about timing of experience.", "D": "Physical versus cognitive development compares domains, not timing of environmental influence."}, "note": "Early–later experience asks when experience matters most, not whether heredity matters."}, {"id": 42, "section": "Part II · Stages & Issues", "question": "Developmental milestones should be understood as:", "choices": [{"letter": "A", "text": "Exact deadlines that every learner must meet"}, {"letter": "B", "text": "Guidelines indicating when skills typically emerge"}, {"letter": "C", "text": "Proof that learners who develop slowly are abnormal"}, {"letter": "D", "text": "Standards that disregard individual differences"}], "answer": "B", "explanation": "Developmental milestones indicate typical ranges or sequences; they are guides rather than rigid deadlines for every individual.", "whyOthers": {"A": "Milestones are not rigid deadlines; there is normal variation.", "C": "A slower timetable does not by itself prove abnormality.", "D": "Good milestone interpretation explicitly allows for individual differences."}, "note": "Milestones are typical guides or ranges, not rigid deadlines."}, {"id": 43, "section": "Part II · Stages & Issues", "question": "Current developmental perspectives generally consider:", "choices": [{"letter": "A", "text": "Only abnormal behavior"}, {"letter": "B", "text": "Only environmental influence"}, {"letter": "C", "text": "Both developmental norms and individual differences"}, {"letter": "D", "text": "Only genetic inheritance"}], "answer": "C", "explanation": "Contemporary developmental thinking considers both normative patterns and meaningful individual differences.", "whyOthers": {"A": "Developmental science is not limited to abnormal behavior.", "B": "Environmental influence matters, but it is not the only factor.", "D": "Genetic inheritance is important, but contemporary views also consider environment and individual variation."}, "note": "Developmental norms and individual differences must be interpreted together."}, {"id": 44, "section": "Part III · Learner-Centered Principles", "question": "The learning of complex subject matter is most effective when it is:", "choices": [{"letter": "A", "text": "Passive and teacher-controlled"}, {"letter": "B", "text": "Intentional and based on constructing meaning"}, {"letter": "C", "text": "Based only on memorization"}, {"letter": "D", "text": "Independent of prior experience"}], "answer": "B", "explanation": "Complex learning is strongest when learners actively and intentionally construct meaning rather than merely receive information.", "whyOthers": {"A": "Passive teacher control conflicts with intentional, active meaning construction.", "C": "Memorization can support some learning but is insufficient as the sole basis for complex understanding.", "D": "Prior knowledge strongly shapes how new information is understood and organized."}, "note": "Learner-centered learning is active meaning-making, not passive reception."}, {"id": 45, "section": "Part III · Learner-Centered Principles", "question": "Successful learners are generally:", "choices": [{"letter": "A", "text": "Passive, dependent, and unreflective"}, {"letter": "B", "text": "Active, goal-directed, and self-regulating"}, {"letter": "C", "text": "Motivated only by punishment"}, {"letter": "D", "text": "Unaffected by their own beliefs"}], "answer": "B", "explanation": "Learner-centered principles describe successful learners as active, goal-directed, strategic, reflective, and increasingly self-regulating.", "whyOthers": {"A": "Passive dependence is the opposite of learner-centered self-regulation.", "C": "Punishment is an external control and does not define successful learning.", "D": "Learners' beliefs, goals, and emotions can influence learning."}, "note": "Successful learners are active, strategic, goal-directed, reflective, and self-regulating."}, {"id": 46, "section": "Part III · Learner-Centered Principles", "question": "The principle stating that learners create meaningful and coherent representations of knowledge refers to:", "choices": [{"letter": "A", "text": "Goals of the learning process"}, {"letter": "B", "text": "Social influences on learning"}, {"letter": "C", "text": "Standards and assessment"}, {"letter": "D", "text": "Learning and diversity"}], "answer": "A", "explanation": "The 'goals of the learning process' principle emphasizes creating meaningful, coherent representations of knowledge.", "whyOthers": {"B": "Social influences concern interaction with others, not specifically building coherent knowledge representations.", "C": "Standards and assessment concern goals, monitoring, and evidence of learning rather than this knowledge-representation principle.", "D": "Learning and diversity concerns individual/cultural differences, not the stated goal of forming coherent representations."}, "note": "Principle clue: meaningful/coherent representation of knowledge = goals of the learning process."}, {"id": 47, "section": "Part III · Learner-Centered Principles", "question": "A teacher asks learners to connect a new lesson on ecosystems to their previous experience of visiting a forest. Which principle is applied?", "choices": [{"letter": "A", "text": "Construction of knowledge"}, {"letter": "B", "text": "Effects of motivation on effort"}, {"letter": "C", "text": "Standards and assessment"}, {"letter": "D", "text": "Developmental influences on learning"}], "answer": "A", "explanation": "Construction of knowledge occurs when learners connect new information with prior knowledge and experience.", "whyOthers": {"B": "Effects of motivation on effort concerns persistence, not specifically linking new learning to prior experience.", "C": "Standards and assessment concerns targets and evidence of learning.", "D": "Developmental influences concern readiness and developmental level, not prior-knowledge integration."}, "note": "Construction of knowledge = link new information to prior knowledge."}, {"id": 48, "section": "Part III · Learner-Centered Principles", "question": "A learner tries several methods to solve a problem, evaluates which method works, and applies it to a new task. This demonstrates:", "choices": [{"letter": "A", "text": "Strategic thinking"}, {"letter": "B", "text": "Passive learning"}, {"letter": "C", "text": "Traditional beliefs"}, {"letter": "D", "text": "Physical maturation"}], "answer": "A", "explanation": "Strategic thinking involves selecting, applying, monitoring, and evaluating strategies for learning and problem-solving.", "whyOthers": {"B": "Passive learning is the opposite of actively selecting and evaluating methods.", "C": "Traditional beliefs are not a problem-solving strategy process.", "D": "Physical maturation is biological unfolding, not conscious strategy selection."}, "note": "Strategic thinking = choose and evaluate strategies; metacognition = think about and regulate your own thinking."}, {"id": 49, "section": "Part III · Learner-Centered Principles", "question": "A student asks, “What strategy did I use, and how can I improve it?” This is an example of:", "choices": [{"letter": "A", "text": "Proximodistal development"}, {"letter": "B", "text": "Metacognition"}, {"letter": "C", "text": "Extrinsic punishment"}, {"letter": "D", "text": "Physical growth"}], "answer": "B", "explanation": "Metacognition is awareness and regulation of one's own thinking—planning, monitoring, and evaluating how one learns.", "whyOthers": {"A": "Proximodistal development is a motor-development direction, not self-reflection on thinking.", "C": "Extrinsic punishment is an external consequence, not monitoring one's cognition.", "D": "Physical growth is quantitative bodily change, not reflection on strategy use."}, "note": "Metacognition literally means cognition about cognition."}, {"id": 50, "section": "Part III · Learner-Centered Principles", "question": "Which factor is included in the context of learning?", "choices": [{"letter": "A", "text": "Culture, technology, and instructional practices"}, {"letter": "B", "text": "Height and weight only"}, {"letter": "C", "text": "Genetic inheritance only"}, {"letter": "D", "text": "Age-related physical decline only"}], "answer": "A", "explanation": "The context of learning includes environmental and instructional conditions such as culture, technology, and teaching practices.", "whyOthers": {"B": "Height and weight are physical characteristics, not the full context of learning.", "C": "Genetic inheritance influences development but is not by itself the learning context described here.", "D": "Age-related decline may affect learners, but it is not the broad contextual category that includes culture, technology, and instruction."}, "note": "Context of learning includes culture, technology, and instructional setting/practices."}, {"id": 51, "section": "Part III · Learner-Centered Principles", "question": "Which statement best describes motivational and emotional influences on learning?", "choices": [{"letter": "A", "text": "Motivation has no relationship to achievement."}, {"letter": "B", "text": "Emotions, beliefs, interests, and goals can influence learning."}, {"letter": "C", "text": "Only external rewards influence learning."}, {"letter": "D", "text": "Emotional states affect behavior but not thinking."}], "answer": "B", "explanation": "Motivational and emotional states—including beliefs, interests, goals, and emotions—can shape attention, persistence, strategy use, and achievement.", "whyOthers": {"A": "Motivation is related to persistence and achievement, so saying there is no relationship is too absolute.", "C": "External rewards are only one source of motivation; intrinsic motives also matter.", "D": "Emotions can influence attention, memory, judgment, and thinking, not only overt behavior."}, "note": "Motivation and emotion affect cognition through attention, persistence, goals, and strategy use."}, {"id": 52, "section": "Part III · Learner-Centered Principles", "question": "Which situation best illustrates intrinsic motivation?", "choices": [{"letter": "A", "text": "A learner studies only to avoid punishment."}, {"letter": "B", "text": "A learner completes a task because of personal interest and curiosity."}, {"letter": "C", "text": "A learner memorizes material only for a reward."}, {"letter": "D", "text": "A learner participates because attendance is required."}], "answer": "B", "explanation": "Intrinsic motivation comes from interest, curiosity, enjoyment, personal meaning, or satisfaction in the activity itself.", "whyOthers": {"A": "Avoiding punishment is extrinsic motivation.", "C": "Working for a reward is extrinsic motivation.", "D": "Required attendance reflects external regulation rather than intrinsic interest."}, "note": "Intrinsic = doing the task for interest or satisfaction; extrinsic = external reward, pressure, or avoidance of punishment."}, {"id": 53, "section": "Part III · Learner-Centered Principles", "question": "Intrinsic motivation is most likely to increase when a task is:", "choices": [{"letter": "A", "text": "Meaningless and excessively difficult"}, {"letter": "B", "text": "Relevant, interesting, appropriately challenging, and connected to choice"}, {"letter": "C", "text": "Completely controlled by the teacher"}, {"letter": "D", "text": "Unrelated to the learner’s interests"}], "answer": "B", "explanation": "Intrinsic motivation is supported by relevance, interest, appropriate challenge, meaningful choice, and a sense of personal control.", "whyOthers": {"A": "Meaninglessness and excessive difficulty tend to reduce intrinsic engagement.", "C": "Complete teacher control reduces learner autonomy and choice.", "D": "Tasks disconnected from learners' interests are less likely to evoke intrinsic motivation."}, "note": "Autonomy/choice + relevance + optimal challenge commonly support intrinsic motivation."}, {"id": 54, "section": "Part III · Learner-Centered Principles", "question": "Which statement about motivation and effort is correct?", "choices": [{"letter": "A", "text": "Complex learning requires little practice."}, {"letter": "B", "text": "Motivation supports sustained effort and persistence."}, {"letter": "C", "text": "Effort is unrelated to achievement."}, {"letter": "D", "text": "Learners acquire complex skills without commitment."}], "answer": "B", "explanation": "Complex learning usually requires sustained effort, deliberate practice, persistence, and motivational support.", "whyOthers": {"A": "Complex learning usually requires substantial practice and effort.", "C": "Effort contributes to practice, persistence, and achievement; it is not unrelated.", "D": "Complex skills are not reliably acquired without commitment and sustained practice."}, "note": "Motivation sustains effort; effort and practice are especially important for complex learning."}, {"id": 55, "section": "Part III · Learner-Centered Principles", "question": "Instruction is developmentally appropriate when it:", "choices": [{"letter": "A", "text": "Uses the same material and method for every learner"}, {"letter": "B", "text": "Considers the learner’s physical, intellectual, emotional, and social development"}, {"letter": "C", "text": "Focuses only on reading readiness"}, {"letter": "D", "text": "Ignores differences in developmental level"}], "answer": "B", "explanation": "Developmentally appropriate instruction takes account of learners' physical, intellectual, emotional, and social development.", "whyOthers": {"A": "Using the same method for everyone ignores developmental differences.", "C": "Reading readiness is only one dimension; developmentally appropriate teaching is broader.", "D": "Ignoring developmental level is the opposite of developmentally appropriate practice."}, "note": "Developmentally appropriate ≠ identical. Match instruction to developmental characteristics and readiness."}, {"id": 56, "section": "Part III · Learner-Centered Principles", "question": "Which classroom practice best applies the principle of social influences on learning?", "choices": [{"letter": "A", "text": "Requiring learners to work alone at all times"}, {"letter": "B", "text": "Providing opportunities for interaction, cooperation, and discussion"}, {"letter": "C", "text": "Preventing learners from sharing ideas"}, {"letter": "D", "text": "Discouraging collaboration to avoid differences of opinion"}], "answer": "B", "explanation": "Learning can be strengthened through social interaction, collaboration, dialogue, and participation with others.", "whyOthers": {"A": "Always working alone removes opportunities for productive social learning.", "C": "Preventing idea-sharing blocks discussion and peer learning.", "D": "Discouraging collaboration contradicts the principle that social interaction can enhance learning."}, "note": "Social interaction can support learning through discussion, collaboration, modeling, and feedback."}, {"id": 57, "section": "Part III · Learner-Centered Principles", "question": "Which statement best reflects individual differences in learning?", "choices": [{"letter": "A", "text": "All learners use the same strategies and learn at the same pace."}, {"letter": "B", "text": "Learners differ because of prior experience, heredity, capabilities, and preferences."}, {"letter": "C", "text": "Learning preferences are always accurate and should never be changed."}, {"letter": "D", "text": "Individual differences are obstacles that should be ignored."}], "answer": "B", "explanation": "Learners differ in prior knowledge, abilities, strategies, heredity, experiences, preferences, and other characteristics that affect learning.", "whyOthers": {"A": "Learners do not all use the same strategies or pace.", "C": "Preferences can be useful information, but they are not infallible prescriptions and should not become rigid labels.", "D": "Ignoring individual differences makes instruction less responsive, not more learner-centered."}, "note": "Individual differences matter, but avoid rigidly labeling students by a single 'learning style.'"}, {"id": 58, "section": "Part III · Learner-Centered Principles", "question": "Learning is most effective when teachers:", "choices": [{"letter": "A", "text": "Ignore language, culture, and socioeconomic background"}, {"letter": "B", "text": "Take learners’ linguistic, cultural, and social backgrounds into account"}, {"letter": "C", "text": "Use one instructional method regardless of context"}, {"letter": "D", "text": "Expect learners to abandon their cultural identities"}], "answer": "B", "explanation": "Learner-centered teaching recognizes linguistic, cultural, and social diversity as relevant context for designing instruction.", "whyOthers": {"A": "Ignoring background discards information that can shape access, meaning, and participation.", "C": "One method regardless of context conflicts with learner-centered responsiveness.", "D": "Learners need not abandon cultural identity for learning to occur; culturally responsive teaching values relevant differences."}, "note": "Culture and language are instructional contexts to consider, not deficits to erase."}, {"id": 59, "section": "Part III · Learner-Centered Principles", "question": "Which assessment practice is most consistent with learner-centered principles?", "choices": [{"letter": "A", "text": "Using only one final examination"}, {"letter": "B", "text": "Using diagnostic, process, outcome, performance, and self-assessment when appropriate"}, {"letter": "C", "text": "Assessing only memorization"}, {"letter": "D", "text": "Giving feedback only at the end of the course"}], "answer": "B", "explanation": "Assessment should be varied and ongoing when appropriate, using evidence before, during, and after instruction—including performance and self-assessment.", "whyOthers": {"A": "A single final test gives limited information about prior knowledge, learning process, and performance.", "C": "Memorization-only assessment misses higher-order understanding and performance.", "D": "End-only feedback is too late to guide ongoing learning and improvement."}, "note": "Use multiple, appropriate forms of assessment to diagnose, monitor, and evaluate learning."}, {"id": 60, "section": "Part III · Learner-Centered Principles", "question": "A teacher sets challenging but attainable goals, monitors learner progress, and provides feedback. Which principle is primarily demonstrated?", "choices": [{"letter": "A", "text": "Standards and assessment"}, {"letter": "B", "text": "Nature versus nurture"}, {"letter": "C", "text": "Proximodistal development"}, {"letter": "D", "text": "Traditional beliefs about age"}], "answer": "A", "explanation": "Challenging but attainable standards, progress monitoring, and feedback are central to the learner-centered principle on standards and assessment.", "whyOthers": {"B": "Nature-nurture is a developmental influence debate, not an assessment principle.", "C": "Proximodistal development is a motor-growth pattern, not about standards or feedback.", "D": "Traditional age beliefs concern stereotypes and expectations, not progress monitoring and feedback."}, "note": "Standards + monitoring + feedback = standards and assessment."}];
+
+const state = {
+  current: 0,
+  answers: Array(QUESTIONS.length).fill(null),
+  summary: false
+};
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  contentGrid: $("contentGrid"),
+  stage: $("stage"),
+  sectionTag: $("sectionTag"),
+  questionNum: $("questionNum"),
+  questionText: $("questionText"),
+  choices: $("choices"),
+  submitBtn: $("submitBtn"),
+  selectionHint: $("selectionHint"),
+  explanationCard: $("explanationCard"),
+  resultPill: $("resultPill"),
+  correctAnswer: $("correctAnswer"),
+  explanationText: $("explanationText"),
+  distractors: $("distractors"),
+  reviewNote: $("reviewNote"),
+  prevBtn: $("prevBtn"),
+  nextBtn: $("nextBtn"),
+  bottomNav: $("bottomNav"),
+  progressBar: $("progressBar"),
+  answeredMini: $("answeredMini"),
+  correctMini: $("correctMini"),
+  percentMini: $("percentMini")
+};
+
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[ch]);
+}
+
+function getStats() {
+  const answered = state.answers.filter(Boolean).length;
+  const correct = state.answers.filter(a => a?.correct).length;
+  const incorrect = answered - correct;
+  const percent = answered ? Math.round((correct / answered) * 100) : 0;
+  return { answered, correct, incorrect, percent };
+}
+
+function updateHeader() {
+  const s = getStats();
+  els.answeredMini.textContent = s.answered;
+  els.correctMini.textContent = s.correct;
+  els.percentMini.textContent = s.percent + "%";
+  const progress = state.summary ? 100 : ((state.current + (state.answers[state.current] ? 1 : 0)) / QUESTIONS.length) * 100;
+  els.progressBar.style.width = Math.min(100, progress) + "%";
+}
+
+function renderQuestion() {
+  state.summary = false;
+  els.bottomNav.style.display = "flex";
+  els.stage.innerHTML = `
+    <div class="content-grid" id="contentGrid">
+      <section class="card question-card" id="questionCard" aria-live="polite">
+        <div class="q-meta">
+          <div class="section-tag" id="sectionTag"></div>
+          <div class="counter">Question <strong id="questionNum"></strong> of <strong id="totalNum">${QUESTIONS.length}</strong></div>
+        </div>
+        <h1 class="question" id="questionText"></h1>
+        <div class="choices" id="choices" role="radiogroup" aria-label="Answer choices"></div>
+        <div class="question-footer">
+          <div class="selection-hint" id="selectionHint">Select one answer, then submit.</div>
+          <button class="btn btn-primary" id="submitBtn" disabled>Submit Answer</button>
+        </div>
+      </section>
+      <aside class="card explanation-card" id="explanationCard" aria-label="Answer and explanation">
+        <div class="feedback-head">
+          <h2>Answer &amp; Explanation</h2>
+          <div class="result-pill" id="resultPill"></div>
+        </div>
+        <div class="explanation-scroll">
+          <div class="feedback-block">
+            <div class="feedback-label">Correct Answer</div>
+            <div class="correct-answer" id="correctAnswer"></div>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">Explanation</div>
+            <p class="feedback-text" id="explanationText"></p>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">Why the Other Choices Are Incorrect</div>
+            <ul class="distractors" id="distractors"></ul>
+          </div>
+          <div class="feedback-block">
+            <div class="feedback-label">LET Review Note</div>
+            <div class="review-note" id="reviewNote"></div>
+          </div>
+        </div>
+      </aside>
+    </div>`;
+  refreshRefs();
+
+  const q = QUESTIONS[state.current];
+  const saved = state.answers[state.current];
+
+  els.sectionTag.textContent = q.section;
+  els.questionNum.textContent = q.id;
+  els.questionText.textContent = q.question;
+  els.choices.innerHTML = "";
+
+  q.choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.className = "choice";
+    btn.type = "button";
+    btn.dataset.letter = choice.letter;
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", "false");
+    btn.innerHTML = `<span class="letter">${choice.letter}</span><span class="choice-text">${escapeHTML(choice.text)}</span>`;
+    btn.addEventListener("click", () => selectChoice(choice.letter));
+    els.choices.appendChild(btn);
+  });
+
+  els.prevBtn.disabled = state.current === 0;
+  els.nextBtn.style.display = saved ? "inline-block" : "none";
+  els.nextBtn.textContent = state.current === QUESTIONS.length - 1 ? "Review Summary" : "Next Question";
+  els.submitBtn.disabled = true;
+
+  if (saved) {
+    restoreAnswered(saved);
+  } else {
+    els.contentGrid.classList.remove("revealed");
+    els.selectionHint.textContent = "Select one answer, then submit.";
+  }
+
+  updateHeader();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function refreshRefs() {
+  els.contentGrid = $("contentGrid");
+  els.sectionTag = $("sectionTag");
+  els.questionNum = $("questionNum");
+  els.questionText = $("questionText");
+  els.choices = $("choices");
+  els.submitBtn = $("submitBtn");
+  els.selectionHint = $("selectionHint");
+  els.explanationCard = $("explanationCard");
+  els.resultPill = $("resultPill");
+  els.correctAnswer = $("correctAnswer");
+  els.explanationText = $("explanationText");
+  els.distractors = $("distractors");
+  els.reviewNote = $("reviewNote");
+  els.submitBtn.addEventListener("click", submitAnswer);
+}
+
+function selectChoice(letter) {
+  if (state.answers[state.current]) return;
+  [...els.choices.children].forEach(btn => {
+    const selected = btn.dataset.letter === letter;
+    btn.classList.toggle("selected", selected);
+    btn.setAttribute("aria-checked", String(selected));
+  });
+  els.submitBtn.disabled = false;
+  els.submitBtn.dataset.selected = letter;
+  els.selectionHint.textContent = `Selected ${letter}. Submit when ready.`;
+}
+
+function submitAnswer() {
+  if (state.answers[state.current]) return;
+  const selected = els.submitBtn.dataset.selected;
+  if (!selected) return;
+  const q = QUESTIONS[state.current];
+  const correct = selected === q.answer;
+  state.answers[state.current] = { selected, correct };
+  restoreAnswered(state.answers[state.current]);
+  updateHeader();
+}
+
+function restoreAnswered(saved) {
+  const q = QUESTIONS[state.current];
+  [...els.choices.children].forEach(btn => {
+    const letter = btn.dataset.letter;
+    btn.disabled = true;
+    btn.classList.remove("selected");
+    if (letter === q.answer) btn.classList.add("correct");
+    if (letter === saved.selected && letter !== q.answer) btn.classList.add("wrong");
+    btn.setAttribute("aria-checked", String(letter === saved.selected));
+  });
+
+  els.submitBtn.disabled = true;
+  els.submitBtn.removeAttribute("data-selected");
+  els.submitBtn.textContent = "Answer Submitted";
+  els.selectionHint.textContent = saved.correct ? "Correct — review the explanation before continuing." : "Incorrect — compare your choice with the correct answer.";
+  els.contentGrid.classList.add("revealed");
+
+  const correctChoice = q.choices.find(c => c.letter === q.answer);
+  els.resultPill.textContent = saved.correct ? "Correct" : "Incorrect";
+  els.resultPill.className = "result-pill " + (saved.correct ? "correct" : "wrong");
+  els.correctAnswer.textContent = `${q.answer}. ${correctChoice.text}`;
+  els.explanationText.textContent = q.explanation;
+  els.reviewNote.textContent = q.note;
+
+  els.distractors.innerHTML = "";
+  Object.entries(q.whyOthers).forEach(([letter, reason]) => {
+    const choice = q.choices.find(c => c.letter === letter);
+    const li = document.createElement("li");
+    li.innerHTML = `<b>${letter}. ${escapeHTML(choice.text)}</b> — ${escapeHTML(reason)}`;
+    els.distractors.appendChild(li);
+  });
+
+  els.nextBtn.style.display = "inline-block";
+  els.nextBtn.textContent = state.current === QUESTIONS.length - 1 ? "Review Summary" : "Next Question";
+}
+
+function nextQuestion() {
+  if (!state.answers[state.current]) return;
+  if (state.current === QUESTIONS.length - 1) {
+    renderSummary();
+    return;
+  }
+  state.current++;
+  renderQuestion();
+}
+
+function previousQuestion() {
+  if (state.summary) return;
+  if (state.current > 0) {
+    state.current--;
+    renderQuestion();
+  }
+}
+
+function renderSummary() {
+  state.summary = true;
+  updateHeader();
+  els.bottomNav.style.display = "none";
+  const s = getStats();
+  const finalPercent = Math.round((s.correct / QUESTIONS.length) * 100);
+  const mistakes = QUESTIONS.filter((q, i) => state.answers[i] && !state.answers[i].correct);
+
+  const mistakesHTML = mistakes.length
+    ? `<div class="mistake-list">${mistakes.map(q => {
+        const a = state.answers[q.id - 1];
+        const correctChoice = q.choices.find(c => c.letter === q.answer);
+        return `<article class="mistake">
+          <div class="mistake-head">
+            <div class="mistake-q">Q${q.id}. ${escapeHTML(q.question)}</div>
+            <button class="jump" onclick="jumpToQuestion(${q.id - 1})">Review</button>
+          </div>
+          <div class="mistake-answer">Correct: ${q.answer}. ${escapeHTML(correctChoice.text)}</div>
+          <div class="mistake-note">${escapeHTML(q.note)}</div>
+        </article>`;
+      }).join("")}</div>`
+    : `<div class="all-correct">Excellent work. You answered all 60 questions correctly. Restart the quiz if you want another retrieval-practice pass.</div>`;
+
+  els.stage.innerHTML = `
+    <section class="card summary">
+      <div class="summary-top">
+        <div>
+          <div class="section-tag">Review Summary</div>
+          <h1>Unit 1 Complete</h1>
+          <p class="summary-intro">Use the mistake list as a targeted review set. Each item below shows the correct answer and the key LET concept worth retaining.</p>
+          <div class="stats">
+            <div class="stat"><span>Correct</span><b>${s.correct}</b></div>
+            <div class="stat"><span>Incorrect</span><b>${s.incorrect}</b></div>
+            <div class="stat"><span>Total</span><b>${QUESTIONS.length}</b></div>
+          </div>
+        </div>
+        <div class="score-box">
+          <div class="big">${s.correct}/${QUESTIONS.length}</div>
+          <div class="sub">Final score · ${finalPercent}%</div>
+        </div>
+      </div>
+      <div class="mistakes">
+        <h2>Questions Answered Incorrectly (${mistakes.length})</h2>
+        ${mistakesHTML}
+      </div>
+      <div class="summary-actions">
+        <button class="btn btn-danger" onclick="restartQuiz()">Restart Quiz</button>
+      </div>
+    </section>`;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function jumpToQuestion(index) {
+  state.current = index;
+  renderQuestion();
+}
+
+function restartQuiz() {
+  state.current = 0;
+  state.answers = Array(QUESTIONS.length).fill(null);
+  state.summary = false;
+  renderQuestion();
+}
+
+els.prevBtn.addEventListener("click", previousQuestion);
+els.nextBtn.addEventListener("click", nextQuestion);
+
+document.addEventListener("keydown", (e) => {
+  if (state.summary) return;
+  const saved = state.answers[state.current];
+  if (!saved && ["a","b","c","d","A","B","C","D"].includes(e.key)) {
+    selectChoice(e.key.toUpperCase());
+  } else if (e.key === "Enter") {
+    if (!saved && !els.submitBtn.disabled) submitAnswer();
+    else if (saved) nextQuestion();
+  } else if (e.key === "ArrowLeft" && state.current > 0) {
+    previousQuestion();
+  }
+});
+
+renderQuestion();
+</script>
+</body>
+</html>
